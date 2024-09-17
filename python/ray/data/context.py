@@ -40,7 +40,7 @@ DEFAULT_SHUFFLE_TARGET_MAX_BLOCK_SIZE = env_integer("RAY_DATA_DEFAULT_SHUFFLE_TA
 # blocks larger than this threshold.
 MAX_SAFE_BLOCK_SIZE_FACTOR = 1.5
 
-DEFAULT_TARGET_MIN_BLOCK_SIZE = env_integer("RAY_DATA_DEFAULT_TARGET_MIN_BLOCK_SIZE", 1 * 1024 * 1024)
+DEFAULT_TARGET_MIN_BLOCK_SIZE = env_integer("RAY_DATA_DEFAULT_TARGET_MIN_BLOCK_SIZE", 16 * 1024 * 1024)
 
 # This default appears to work well with most file sizes on remote storage systems,
 # which is very sensitive to the buffer size.
