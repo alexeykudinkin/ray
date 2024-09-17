@@ -171,10 +171,15 @@ def _autodetect_parallelism(
         if placement_group is None:
             placement_group = ray.util.get_current_placement_group()
         avail_cpus = avail_cpus or _estimate_avail_cpus(placement_group)
-        parallelism = max(
-            min(ctx.read_op_min_num_blocks, max_reasonable_parallelism),
-            min_safe_parallelism,
-            avail_cpus * 2,
+
+        # Derive parallelism target as the max of
+        #   - Min number of blocks for Read op
+        #   - 2 x # of available CPUs
+        target_parallelism = max(ctx.read_op_min_num_blocks, avail_cpus * 2)
+        # Verify that target parallelism is w/in safe bounds, ie
+        # min <= target <= max
+        parallelism = min(
+            max(target_parallelism, min_safe_parallelism), max_reasonable_parallelism
         )
 
         if parallelism == ctx.read_op_min_num_blocks:
