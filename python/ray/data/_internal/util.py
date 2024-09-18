@@ -219,8 +219,8 @@ def _autodetect_parallelism(
         logger.info(
             f"Autodetected parallelism of {parallelism} based on: {reason}; "
             f"Estimated available CPUs {avail_cpus}; "
-            f"Estimated data size {mem_size / MiB}MiB; "
-            f"Target min/max block sizes are {ctx.target_min_block_size / MiB}MiB / {ctx.target_max_block_size / MiB}MiB; "
+            f"Estimated data size {mem_size / MiB:.2f}MiB; "
+            f"Target min/max block sizes are {ctx.target_min_block_size / MiB:.1f}MiB / {ctx.target_max_block_size / MiB:.1f}MiB; "
         )
 
     return parallelism, reason, mem_size
