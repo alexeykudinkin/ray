@@ -55,6 +55,9 @@ LazyModule = Union[None, bool, ModuleType]
 _pyarrow_dataset: LazyModule = None
 
 
+MiB = 1024 * 1024
+
+
 def _lazy_import_pyarrow_dataset() -> LazyModule:
     global _pyarrow_dataset
     if _pyarrow_dataset is None:
@@ -184,20 +187,20 @@ def _autodetect_parallelism(
 
         if parallelism == ctx.read_op_min_num_blocks:
             reason = (
-                "DataContext.get_current().read_op_min_num_blocks="
+                "DataContext.read_op_min_num_blocks="
                 f"{ctx.read_op_min_num_blocks}"
             )
         elif parallelism == max_reasonable_parallelism:
             reason = (
                 "output blocks of size at least "
-                "DataContext.get_current().target_min_block_size="
-                f"{ctx.target_min_block_size / (1024 * 1024)}MiB"
+                "DataContext.target_min_block_size="
+                f"{ctx.target_min_block_size / MiB}MiB"
             )
         elif parallelism == min_safe_parallelism:
             reason = (
                 "output blocks of size at most "
-                "DataContext.get_current().target_max_block_size="
-                f"{ctx.target_max_block_size / (1024 * 1024)}MiB"
+                "DataContext.target_max_block_size="
+                f"{ctx.target_max_block_size / MiB}MiB"
             )
         else:
             reason = (
@@ -206,9 +209,10 @@ def _autodetect_parallelism(
             )
 
         logger.debug(
-            f"Autodetected parallelism={parallelism} based on "
-            f"estimated_available_cpus={avail_cpus} and "
-            f"estimated_data_size={mem_size}."
+            f"Autodetected parallelism of {parallelism} based on: {reason}; "
+            f"Estimated available CPUs {avail_cpus}; "
+            f"Estimated data size {mem_size / MiB}MiB; "
+            f"Target min/max block sizes are {ctx.target_min_block_size / MiB}MiB / {ctx.target_max_block_size / MiB}MiB; "
         )
 
     return parallelism, reason, mem_size
