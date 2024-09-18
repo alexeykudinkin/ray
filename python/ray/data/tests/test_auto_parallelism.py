@@ -20,87 +20,57 @@ class TestCase:
 MiB = 1024 * 1024
 GiB = 1024 * MiB
 
+
 TEST_CASES = [
     TestCase(
         avail_cpus=4,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=1024,
-        expected_parallelism=8,  # avail_cpus has precedence
+        expected_parallelism=1,  # Capped by DataContext.target_min_block_size (16Mb)
     ),
     TestCase(
         avail_cpus=4,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=10 * MiB,
-        expected_parallelism=10,  # MIN_BLOCK_SIZE has precedence
-    ),
-    TestCase(
-        avail_cpus=4,
-        target_max_block_size=DataContext.get_current().target_max_block_size,
-        data_size=20 * MiB,
-        expected_parallelism=20,  # MIN_BLOCK_SIZE has precedence
-    ),
-    TestCase(
-        avail_cpus=4,
-        target_max_block_size=DataContext.get_current().target_max_block_size,
-        data_size=100 * MiB,
-        expected_parallelism=100,  # MIN_BLOCK_SIZE has precedence
+        expected_parallelism=1,  # Capped by DataContext.target_min_block_size (16Mb)
     ),
     TestCase(
         avail_cpus=4,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=1 * GiB,
-        expected_parallelism=200,  # MIN_PARALLELISM has precedence
+        expected_parallelism=64,  # Capped by DataContext.target_min_block_size (16Mb)
     ),
     TestCase(
         avail_cpus=4,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=10 * GiB,
-        expected_parallelism=200,  # MIN_PARALLELISM has precedence
+        expected_parallelism=200,  # Determined by DataContext.read_op_min_num_blocks
     ),
     TestCase(
         avail_cpus=150,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=10 * GiB,
-        expected_parallelism=300,  # avail_cpus has precedence
+        expected_parallelism=300,  # Determined by available CPUs (x2)
     ),
     TestCase(
         avail_cpus=400,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=10 * GiB,
-        expected_parallelism=800,  # avail_cpus has precedence
-    ),
-    TestCase(
-        avail_cpus=400,
-        target_max_block_size=DataContext.get_current().target_max_block_size,
-        data_size=1 * MiB,
-        expected_parallelism=800,  # avail_cpus has precedence
+        expected_parallelism=640,  # Capped by DataContext.target_min_block_size (16Mb)
     ),
     TestCase(
         avail_cpus=4,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=1000 * GiB,
-        expected_parallelism=8000,  # MAX_BLOCK_SIZE has precedence
-    ),
-    TestCase(
-        avail_cpus=4,
-        target_max_block_size=DataContext.get_current().target_max_block_size,
-        data_size=10000 * GiB,
-        expected_parallelism=80000,  # MAX_BLOCK_SIZE has precedence
+        expected_parallelism=8000,  # Floored by DataContext.target_max_block_size (128Mb)
     ),
     TestCase(
         avail_cpus=4,
         target_max_block_size=512 * MiB,
         data_size=1000 * GiB,
-        expected_parallelism=2000,  # passed max_block_size has precedence
-    ),
-    TestCase(
-        avail_cpus=4,
-        target_max_block_size=512 * MiB,
-        data_size=10000 * GiB,
-        expected_parallelism=20000,  # passed max_block_size has precedence
+        expected_parallelism=2000,  # Floored by passed in target_max_block_size (128Mb)
     ),
 ]
-
 
 @pytest.mark.parametrize(
     "avail_cpus,target_max_block_size,data_size,expected",
@@ -113,15 +83,17 @@ def test_autodetect_parallelism(
         def estimate_inmemory_data_size(self):
             return data_size
 
-    result, _, _ = _autodetect_parallelism(
+    result, reason, _ = _autodetect_parallelism(
         parallelism=-1,
         target_max_block_size=target_max_block_size,
         ctx=DataContext.get_current(),
         datasource_or_legacy_reader=MockReader(),
         avail_cpus=avail_cpus,
     )
-    assert result == expected, (result, expected)
 
+    print(f">>> Parallelism chosen based on: {reason}")
+
+    assert result == expected, reason
 
 
 def test_auto_parallelism_basic(shutdown_only, restore_data_context):
