@@ -146,10 +146,18 @@ def _autodetect_parallelism(
         for the detected parallelism (only if -1 was specified), and the estimated
         inmemory size of the dataset.
     """
-    min_safe_parallelism = 1
-    max_reasonable_parallelism = sys.maxsize
+
     if mem_size is None and datasource_or_legacy_reader:
         mem_size = datasource_or_legacy_reader.estimate_inmemory_data_size()
+
+    min_safe_parallelism = 1
+    max_reasonable_parallelism = sys.maxsize
+
+    # Evaluate safe parallelism bounds based on estimated data size
+    #   - Min (safe) parallelism is determined such that produced blocks
+    #   do not exceed `target_max_block_size`
+    #   - Max (reasonable) parallelism is determined such that produced blocks
+    #   are no smaller than `DataContext.target_min_block_size`
     if mem_size is not None and not np.isnan(mem_size):
         min_safe_parallelism = max(1, int(mem_size / target_max_block_size))
         max_reasonable_parallelism = max(1, int(mem_size / ctx.target_min_block_size))
@@ -170,13 +178,13 @@ def _autodetect_parallelism(
             )
             ctx.read_op_min_num_blocks = ctx.min_parallelism
 
-        # Start with 2x the number of cores as a baseline, with a min floor.
         if placement_group is None:
             placement_group = ray.util.get_current_placement_group()
+
         avail_cpus = avail_cpus or _estimate_avail_cpus(placement_group)
 
         # Derive parallelism target as the max of
-        #   - Min number of blocks for Read op
+        #   - Configured min number of blocks for any read op (floor)
         #   - 2 x # of available CPUs
         target_parallelism = max(ctx.read_op_min_num_blocks, avail_cpus * 2)
         # Verify that target parallelism is w/in safe bounds, ie
@@ -187,7 +195,7 @@ def _autodetect_parallelism(
 
         if parallelism == ctx.read_op_min_num_blocks:
             reason = (
-                "DataContext.read_op_min_num_blocks="
+                "configured min-level of parallelism of DataContext.read_op_min_num_blocks="
                 f"{ctx.read_op_min_num_blocks}"
             )
         elif parallelism == max_reasonable_parallelism:
@@ -205,10 +213,10 @@ def _autodetect_parallelism(
         else:
             reason = (
                 "parallelism at least twice the available number "
-                f"of CPUs ({avail_cpus})"
+                f"of CPUs {avail_cpus}"
             )
 
-        logger.debug(
+        logger.info(
             f"Autodetected parallelism of {parallelism} based on: {reason}; "
             f"Estimated available CPUs {avail_cpus}; "
             f"Estimated data size {mem_size / MiB}MiB; "
