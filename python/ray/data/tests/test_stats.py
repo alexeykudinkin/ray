@@ -1371,8 +1371,13 @@ def test_dataset_throughput():
     ray.shutdown()
     ray.init(num_cpus=2)
 
-    f = dummy_map_batches_sleep(0.01)
-    ds = ray.data.range(100).map(f).materialize().map(f).materialize()
+    dataset = ray.data.range_tensor(5000, shape=(1000,))
+
+    # Assert that there's parallelism in the system
+    assert dataset._plan.initial_num_blocks() >= 2
+
+    f = dummy_map_batches_sleep(0.001)
+    materialized = dataset.map(f).materialize().map(f).materialize()
 
     # Pattern to match operator throughput
     operator_pattern = re.compile(
@@ -1382,7 +1387,7 @@ def test_dataset_throughput():
 
     # Ray data throughput should always be better than single node throughput for
     # multi-cpu case.
-    for match in operator_pattern.findall(ds.stats()):
+    for match in operator_pattern.findall(materialized.stats()):
         assert float(match[1]) >= float(match[2])
 
     # Pattern to match dataset throughput
@@ -1391,7 +1396,7 @@ def test_dataset_throughput():
         re.DOTALL,
     )
 
-    dataset_match = dataset_pattern.search(ds.stats())
+    dataset_match = dataset_pattern.search(materialized.stats())
     assert float(dataset_match[1]) >= float(dataset_match[2])
 
 
