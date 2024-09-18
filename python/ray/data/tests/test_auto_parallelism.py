@@ -5,6 +5,7 @@ import pytest
 import ray
 from ray.data._internal.util import _autodetect_parallelism
 from ray.data.context import DataContext
+from ray.experimental.channel.shared_memory_channel import MIN_BUFFER_SIZE
 from ray.tests.conftest import *  # noqa
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
@@ -127,7 +128,8 @@ def test_auto_parallelism_placement_group(shutdown_only):
     def run():
         context = DataContext.get_current()
         context.min_parallelism = 1
-        ds = ray.data.range_tensor(2000, shape=(100,), override_num_blocks=-1)
+        context.target_min_block_size = 1 * MiB
+        ds = ray.data.range_tensor(10000, shape=(100,), override_num_blocks=-1)
         return ds._plan.initial_num_blocks()
 
     # 1/16 * 4 * 16 = 4
