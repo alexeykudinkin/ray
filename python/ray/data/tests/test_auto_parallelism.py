@@ -123,17 +123,25 @@ def test_autodetect_parallelism(
     assert result == expected, (result, expected)
 
 
-def test_auto_parallelism_basic(shutdown_only):
+
+def test_auto_parallelism_basic(shutdown_only, restore_data_context):
     ray.init(num_cpus=8)
+
     context = DataContext.get_current()
     context.read_op_min_num_blocks = 1
+    context.target_min_block_size = 1 * MiB
+
     # Datasource bound.
     ds = ray.data.range_tensor(5, shape=(100,), override_num_blocks=-1)
-    assert ds._plan.initial_num_blocks() == 5, ds
-    # CPU bound. TODO(ekl) we should fix range datasource to respect parallelism more
-    # properly, currently it can go a little over.
+    # Expected data size is < 4Kb, therefore all of the data could fit into
+    # 1 block (of at least 1MiB)
+    assert ds._plan.initial_num_blocks() == 1, ds
+
     ds = ray.data.range_tensor(10000, shape=(100,), override_num_blocks=-1)
-    assert ds._plan.initial_num_blocks() == 16, ds
+    # Expected data size is < 8Mb, therefore all of the data could fit into
+    # 8 blocks (of at least 1MiB each)
+    assert ds._plan.initial_num_blocks() == 8, ds
+
     # Block size bound.
     ds = ray.data.range_tensor(100000000, shape=(100,), override_num_blocks=-1)
     assert ds._plan.initial_num_blocks() >= 590, ds
