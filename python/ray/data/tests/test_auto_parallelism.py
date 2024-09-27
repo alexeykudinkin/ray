@@ -5,7 +5,6 @@ import pytest
 import ray
 from ray.data._internal.util import _autodetect_parallelism
 from ray.data.context import DataContext
-from ray.experimental.channel.shared_memory_channel import MIN_BUFFER_SIZE
 from ray.tests.conftest import *  # noqa
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
@@ -63,7 +62,7 @@ TEST_CASES = [
         avail_cpus=4,
         target_max_block_size=DataContext.get_current().target_max_block_size,
         data_size=1000 * GiB,
-        expected_parallelism=8000,  # Floored by DataContext.target_max_block_size (128Mb)
+        expected_parallelism=8000,  # Floored by DataContext.target_max_block_size
     ),
     TestCase(
         avail_cpus=4,
@@ -72,6 +71,7 @@ TEST_CASES = [
         expected_parallelism=2000,  # Floored by passed in target_max_block_size (128Mb)
     ),
 ]
+
 
 @pytest.mark.parametrize(
     "avail_cpus,target_max_block_size,data_size,expected",

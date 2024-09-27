@@ -1151,8 +1151,8 @@ def test_parquet_read_spread(ray_start_cluster, tmp_path, restore_data_context):
     path2 = os.path.join(data_path, "test2.parquet")
     df2.to_parquet(path2)
 
-    # Reset the min block size to prevent Ray Data from combining multiple fragments into a
-    # single block.
+    # Reset the min block size to prevent Ray Data from combining multiple fragments
+    # into a single block.
     ray.data.DataContext.get_current().target_min_block_size = 1
     ds = ray.data.read_parquet(data_path)
 

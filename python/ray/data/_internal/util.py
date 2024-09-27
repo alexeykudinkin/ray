@@ -195,8 +195,8 @@ def _autodetect_parallelism(
 
         if parallelism == ctx.read_op_min_num_blocks:
             reason = (
-                "configured min-level of parallelism of DataContext.read_op_min_num_blocks="
-                f"{ctx.read_op_min_num_blocks}"
+                "configured min-level of parallelism of "
+                f"DataContext.read_op_min_num_blocks={ctx.read_op_min_num_blocks}"
             )
         elif parallelism == max_reasonable_parallelism:
             reason = (
@@ -220,7 +220,9 @@ def _autodetect_parallelism(
             f"Autodetected parallelism of {parallelism} based on: {reason}; "
             f"Estimated available CPUs {avail_cpus}; "
             f"Estimated data size {mem_size / MiB:.2f}MiB; "
-            f"Target min/max block sizes are {ctx.target_min_block_size / MiB:.1f}MiB / {ctx.target_max_block_size / MiB:.1f}MiB; "
+            f"Target min/max block sizes are "
+            f"{ctx.target_min_block_size / MiB:.1f}MiB / "
+            f"{ctx.target_max_block_size / MiB:.1f}MiB; "
         )
 
     return parallelism, reason, mem_size
