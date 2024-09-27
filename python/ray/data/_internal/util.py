@@ -216,10 +216,14 @@ def _autodetect_parallelism(
                 f"of CPUs {avail_cpus}"
             )
 
+        estimated_size_in_memory_str = (
+            "{mem_size / MiB:.2f}MiB" if mem_size is not None else "NaN"
+        )
+
         logger.info(
             f"Autodetected parallelism of {parallelism} based on: {reason}; "
             f"Estimated available CPUs {avail_cpus}; "
-            f"Estimated data size {mem_size / MiB:.2f}MiB; "
+            f"Estimated data size {estimated_size_in_memory_str}; "
             f"Target min/max block sizes are "
             f"{ctx.target_min_block_size / MiB:.1f}MiB / "
             f"{ctx.target_max_block_size / MiB:.1f}MiB; "
