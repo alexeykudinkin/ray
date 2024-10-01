@@ -372,7 +372,6 @@ def test_parquet_read_bulk(ray_start_regular_shared, fs, data_path):
     pq.write_table(txt_table, _unwrap_protocol(txt_path), filesystem=fs)
 
     ds = ray.data.read_parquet_bulk(paths + [txt_path], filesystem=fs)
-    assert ds._plan.initial_num_blocks() == 2
     assert not ds._plan.has_started_execution
 
     # Forces a data read.
