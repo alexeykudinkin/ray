@@ -154,6 +154,21 @@ def _autodetect_parallelism(
     if mem_size is None and datasource_or_legacy_reader:
         mem_size = datasource_or_legacy_reader.estimate_inmemory_data_size()
 
+    target_min_block_size = ctx.target_min_block_size
+
+    def _compose_memory_estimation_context() -> str:
+        estimated_size_in_memory_str = (
+            f"{mem_size / MiB:.2f}MiB" if mem_size is not None else "NaN"
+        )
+
+        return (
+            f"Estimated data size {estimated_size_in_memory_str}; "
+            f"Target min/max block sizes are "
+            f"{target_min_block_size / MiB:.1f}MiB / "
+            f"{target_max_block_size / MiB:.1f}MiB"
+        )
+
+    # Set fallback values for parallelism boundaries
     min_safe_parallelism = 1
     max_reasonable_parallelism = sys.maxsize
 
@@ -164,7 +179,13 @@ def _autodetect_parallelism(
     #   are no smaller than `DataContext.target_min_block_size`
     if mem_size is not None and not np.isnan(mem_size):
         min_safe_parallelism = max(1, int(mem_size / target_max_block_size))
-        max_reasonable_parallelism = max(1, int(mem_size / ctx.target_min_block_size))
+        max_reasonable_parallelism = max(1, int(mem_size / target_min_block_size))
+
+        estimation_context = _compose_memory_estimation_context()
+
+        assert (
+            min_safe_parallelism <= max_reasonable_parallelism
+        ), f"Parallelism boundaries have to overlap: {estimation_context}"
 
     reason = ""
     if parallelism < 0:
@@ -206,13 +227,13 @@ def _autodetect_parallelism(
             reason = (
                 "output blocks of size at least "
                 "DataContext.target_min_block_size="
-                f"{ctx.target_min_block_size / MiB}MiB"
+                f"{target_min_block_size / MiB}MiB"
             )
         elif parallelism == min_safe_parallelism:
             reason = (
                 "output blocks of size at most "
                 "DataContext.target_max_block_size="
-                f"{ctx.target_max_block_size / MiB}MiB"
+                f"{target_max_block_size / MiB}MiB"
             )
         else:
             reason = (
@@ -220,17 +241,10 @@ def _autodetect_parallelism(
                 f"of CPUs {avail_cpus}"
             )
 
-        estimated_size_in_memory_str = (
-            f"{mem_size / MiB:.2f}MiB" if mem_size is not None else "NaN"
-        )
-
         logger.info(
             f"Autodetected parallelism of {parallelism} based on: {reason}; "
             f"Estimated available CPUs {avail_cpus}; "
-            f"Estimated data size {estimated_size_in_memory_str}; "
-            f"Target min/max block sizes are "
-            f"{ctx.target_min_block_size / MiB:.1f}MiB / "
-            f"{ctx.target_max_block_size / MiB:.1f}MiB; "
+            f"{_compose_memory_estimation_context()}"
         )
 
     return parallelism, reason, mem_size
