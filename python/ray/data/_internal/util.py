@@ -217,7 +217,7 @@ def _autodetect_parallelism(
             )
 
         estimated_size_in_memory_str = (
-            "{mem_size / MiB:.2f}MiB" if mem_size is not None else "NaN"
+            f"{mem_size / MiB:.2f}MiB" if mem_size is not None else "NaN"
         )
 
         logger.info(
