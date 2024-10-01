@@ -114,23 +114,26 @@ def _autodetect_parallelism(
 ) -> Tuple[int, str, Optional[int]]:
     """Returns parallelism to use and the min safe parallelism to avoid OOMs.
 
-    This detects parallelism using the following heuristics, applied in order:
+    This detects parallelism using the following heuristic (applied in order):
 
-     1) We start with the default value of 200. This can be overridden by
-        setting the `read_op_min_num_blocks` attribute of
-        :class:`~ray.data.context.DataContext`.
-     2) Min block size. If the parallelism would make blocks smaller than this
-        threshold, the parallelism is reduced to avoid the overhead of tiny blocks.
-     3) Max block size. If the parallelism would make blocks larger than this
-        threshold, the parallelism is increased to avoid OOMs during processing.
-     4) Available CPUs. If the parallelism cannot make use of all the available
-        CPUs in the cluster, the parallelism is increased until it can.
+     1) We start with the target parallelism decided as
+
+            target_parallelism = max(default_parallelism, available_cpus * 2)
+
+        Default parallelism can be overridden by setting the `read_op_min_num_blocks`
+        attribute of :class:`~ray.data.context.DataContext`.
+
+     2) Parallelism is capped to produce blocks no smaller than
+        `DataContext.target_min_block_size` threshold.
+
+     3) Parallelism is floored to produce blocks no larger than `target_max_block_size`
+        threshold.
 
     Args:
         parallelism: The user-requested parallelism, or -1 for auto-detection.
         target_max_block_size: The target max block size to
             produce. We pass this separately from the
-            DatasetContext because it may be set per-op instead of
+            `DataContext` because it may be set per-op instead of
             per-Dataset.
         ctx: The current Dataset context to use for configs.
         datasource_or_legacy_reader: The datasource or legacy reader, to be used for
