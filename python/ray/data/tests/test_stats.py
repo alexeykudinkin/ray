@@ -1444,8 +1444,15 @@ def test_spilled_stats(shutdown_only, verbose_stats_logs, restore_data_context):
     context.enable_get_object_locations_for_metrics = True
     # The object store is about 100MB.
     ray.init(object_store_memory=100e6)
-    # The size of dataset is 1000*80*80*4*8B, about 200MB.
-    ds = ray.data.range(1000 * 80 * 80 * 4).map_batches(lambda x: x).materialize()
+    # NOTE: The size of dataset is 1000*80*80*4*8B, about 200MB.
+    #       Provided, that we peg number of target blocks at 2, we'd run exactly 2 task
+    #       processing ~100Mb each therefore resulting in 1 of the blocks being fully
+    #       spilled to disk
+    ds = (
+        ray.data.range(1000 * 80 * 80 * 4, override_num_blocks=2)
+        .map_batches(lambda x: x)
+        .materialize()
+    )
 
     extra_metrics = gen_extra_metrics_str(
         MEM_SPILLED_EXTRA_METRICS_TASK_BACKPRESSURE,
