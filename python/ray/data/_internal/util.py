@@ -156,6 +156,15 @@ def _autodetect_parallelism(
 
     target_min_block_size = ctx.target_min_block_size
 
+    if target_max_block_size < target_min_block_size:
+        logger.warning(
+            f"Provided `target_max_block_size` ({target_max_block_size / MiB:.1f}MiB) "
+            f"< target_min_block_size` ({target_min_block_size / MiB:.1f}); "
+            f"overriding `target_min_block_size` with `target_max_block_size`"
+        )
+
+        target_min_block_size = target_max_block_size
+
     def _compose_memory_estimation_context() -> str:
         estimated_size_in_memory_str = (
             f"{mem_size / MiB:.2f}MiB" if mem_size is not None else "NaN"
