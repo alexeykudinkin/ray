@@ -303,7 +303,7 @@ def test_read_with_map_batches_fused_successfully(
             Read(
                 datasource=MagicMock(
                     name="Parquet",
-                    can_modify_num_rows=MagicMock(side_effect=lambda: True)
+                    can_modify_num_rows=MagicMock(side_effect=lambda: True),
                 ),
                 datasource_or_legacy_reader=MagicMock(
                     get_read_tasks=lambda _: [MagicMock()]
@@ -315,18 +315,18 @@ def test_read_with_map_batches_fused_successfully(
         ),
         (
             # No fusion (could drastically expand dataset)
-                Read(
-                    datasource=MagicMock(
-                        name="Image/Video/Binary",
-                        can_modify_num_rows=MagicMock(side_effect=lambda: False)
-                    ),
-                    datasource_or_legacy_reader=MagicMock(
-                        get_read_tasks=lambda _: [MagicMock()]
-                    ),
-                    parallelism=1,
-                    mem_size=1,
+            Read(
+                datasource=MagicMock(
+                    name="Image/Video/Binary",
+                    can_modify_num_rows=MagicMock(side_effect=lambda: False),
                 ),
-                False,
+                datasource_or_legacy_reader=MagicMock(
+                    get_read_tasks=lambda _: [MagicMock()]
+                ),
+                parallelism=1,
+                mem_size=1,
+            ),
+            False,
         ),
         (
             # No fusion (could drastically reduce dataset)

@@ -109,8 +109,7 @@ class Read(AbstractMap):
         #       However, some data-sources (for image/video/binary) are producing
         #       strictly 1 row per single row of input (a file-path)
         if isinstance(
-            self._datasource,
-            (VideoDatasource, ImageDatasource, BinaryDatasource)
+            self._datasource, (VideoDatasource, ImageDatasource, BinaryDatasource)
         ):
             return False
 
