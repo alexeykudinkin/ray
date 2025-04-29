@@ -99,6 +99,19 @@ class Read(AbstractMap):
         return True
 
     def can_modify_num_rows(self) -> bool:
-        # NOTE: Returns true, since most of the readers expands its input
-        #       and produce many rows for every single row of the input
+        from ray.data._internal.datasource.binary_datasource import BinaryDatasource
+        from ray.data._internal.datasource.image_datasource import ImageDatasource
+        from ray.data._internal.datasource.video_datasource import VideoDatasource
+
+        # NOTE: Most of the readers expands its input and produce many rows for
+        #       every single row of the input (a path).
+        #
+        #       However, some data-sources (for image/video/binary) are producing
+        #       strictly 1 row per single row of input (a file-path)
+        if isinstance(
+            self._datasource,
+            (VideoDatasource, ImageDatasource, BinaryDatasource)
+        ):
+            return False
+
         return True
